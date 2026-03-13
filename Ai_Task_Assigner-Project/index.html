@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- RESET GUARD: clears old localStorage so new data (Tejas KN, 8 employees) always loads -->
+<script>if(localStorage.getItem('data_version')!=='v3'){localStorage.removeItem('employees');localStorage.removeItem('tasks');localStorage.setItem('data_version','v3');}</script>
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Company Portal — Manager & Employee</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0d0d1a;
+      --surface:rgba(255,255,255,0.03);
+      --card:rgba(255,255,255,0.05);
+      --border:rgba(255,255,255,0.08);
+      --border2:rgba(139,92,246,0.3);
+      --text:#f1f0ff;
+      --sub:#8b8aa8;
+      --muted:#b0aecf;
+      --grad:linear-gradient(135deg,#667eea,#764ba2);
+      --grad2:linear-gradient(135deg,#f093fb,#f5576c);
+      --grad3:linear-gradient(135deg,#4facfe,#00f2fe);
+      --grad4:linear-gradient(135deg,#43e97b,#38f9d7);
+      --glow:rgba(102,126,234,0.35);
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+
+    /* BG */
+    body::before{
+      content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+      background:
+        radial-gradient(ellipse 700px 500px at 10% 10%,rgba(102,126,234,0.18),transparent),
+        radial-gradient(ellipse 600px 400px at 90% 80%,rgba(118,75,162,0.18),transparent),
+        radial-gradient(ellipse 400px 300px at 50% 50%,rgba(79,172,254,0.08),transparent);
+    }
+
+    ::-webkit-scrollbar{width:5px}
+    ::-webkit-scrollbar-thumb{background:rgba(139,92,246,0.4);border-radius:4px}
+
+    /* ══ WRAP ══ */
+    .wrap{position:relative;z-index:2;min-height:100vh}
+
+    /* ══ AUTH ══ */
+    #auth{display:flex;justify-content:center;align-items:center;min-height:100vh;padding:24px}
+    .auth-box{
+      width:100%;max-width:460px;
+      background:rgba(255,255,255,0.05);
+      backdrop-filter:blur(20px);
+      border:1px solid var(--border2);
+      border-radius:24px;padding:40px;
+      box-shadow:0 0 0 1px rgba(255,255,255,0.06), 0 32px 64px rgba(0,0,0,0.6), 0 0 80px var(--glow);
+    }
+    .auth-logo{
+      display:flex;align-items:center;gap:14px;margin-bottom:32px;
+    }
+    .auth-logo .icon{
+      width:52px;height:52px;border-radius:16px;
+      background:var(--grad);
+      display:grid;place-items:center;font-size:24px;
+      box-shadow:0 8px 24px var(--glow);
+    }
+    .auth-logo h1{font-size:22px;font-weight:800;letter-spacing:-0.5px}
+    .auth-logo p{font-size:12px;color:var(--sub);margin-top:2px}
+    .role-tabs{display:flex;gap:4px;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:14px;padding:5px;margin-bottom:26px}
+    .role-tabs button{flex:1;padding:11px;border:none;border-radius:10px;background:transparent;color:var(--sub);font-family:'Outfit',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:.2s}
+    .role-tabs button.active{background:var(--grad);color:#fff;box-shadow:0 4px 16px var(--glow)}
+    .f-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .f-group{display:grid;gap:7px}
+    .f-group label{font-size:11px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.08em}
+    input,select,textarea{
+      width:100%;padding:12px 15px;border-radius:11px;
+      background:rgba(0,0,0,0.35);color:var(--text);
+      border:1px solid var(--border);font-family:'Outfit',sans-serif;font-size:14px;
+      transition:.2s;
+    }
+    input:focus,select:focus,textarea:focus{outline:none;border-color:rgba(139,92,246,0.6);box-shadow:0 0 0 3px rgba(139,92,246,0.15)}
+    input::placeholder{color:var(--sub)}
+    .form-grid{display:grid;gap:16px;margin-top:6px}
+    .login-hint{font-size:12px;color:var(--sub);text-align:center;margin-top:4px;line-height:1.6}
+
+    /* BUTTONS */
+    .btn{padding:12px 18px;border-radius:11px;border:none;font-family:'Outfit',sans-serif;font-weight:700;font-size:14px;cursor:pointer;transition:.2s;color:#fff}
+    .btn-grad{background:var(--grad);box-shadow:0 6px 20px var(--glow)}
+    .btn-grad:hover{opacity:.88;transform:translateY(-1px)}
+    .btn-ghost{background:rgba(255,255,255,0.06);border:1px solid var(--border);color:var(--muted);font-size:13px}
+    .btn-ghost:hover{background:rgba(255,255,255,0.1);color:var(--text)}
+    .btn-ok{background:rgba(67,233,123,0.15);color:#43e97b;border:1px solid rgba(67,233,123,0.25);font-size:12px}
+    .btn-ok:hover{background:rgba(67,233,123,0.25)}
+    .btn-red{background:rgba(245,87,108,0.15);color:#f5576c;border:1px solid rgba(245,87,108,0.25);font-size:12px}
+    .btn-red:hover{background:rgba(245,87,108,0.25)}
+    .btn-sm{padding:7px 12px;font-size:12px;border-radius:8px}
+    .btn-full{width:100%;display:block}
+
+    /* ══ APP SHELL ══ */
+    #app{display:none}
+    .shell{display:grid;grid-template-columns:270px 1fr;min-height:100vh}
+
+    /* SIDEBAR */
+    .sidebar{
+      background:linear-gradient(180deg,rgba(102,126,234,0.12) 0%,rgba(118,75,162,0.08) 100%);
+      border-right:1px solid var(--border2);
+      display:flex;flex-direction:column;
+      position:sticky;top:0;height:100vh;overflow-y:auto;padding:22px 14px;
+    }
+    .sb-brand{display:flex;align-items:center;gap:12px;padding:8px 10px;margin-bottom:6px}
+    .sb-icon{width:40px;height:40px;border-radius:12px;background:var(--grad);display:grid;place-items:center;font-size:18px;flex-shrink:0;box-shadow:0 4px 14px var(--glow)}
+    .sb-brand-txt b{font-size:16px;font-weight:800;display:block}
+    .sb-brand-txt span{font-size:11px;color:var(--sub)}
+    .sb-sep{height:1px;background:var(--border);margin:10px 0}
+    .sb-label{font-size:10px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.12em;padding:12px 12px 4px}
+    .nav-menu{display:flex;flex-direction:column;gap:3px}
+    .nav-menu button{
+      display:flex;align-items:center;gap:11px;width:100%;padding:11px 14px;
+      border-radius:12px;border:none;background:transparent;color:var(--muted);
+      font-family:'Outfit',sans-serif;font-size:14px;font-weight:500;cursor:pointer;
+      transition:.15s;text-align:left;
+    }
+    .nav-menu button .ico{font-size:17px;width:22px;text-align:center;flex-shrink:0}
+    .nav-menu button:hover{background:rgba(255,255,255,0.07);color:var(--text)}
+    .nav-menu button.active{
+      background:linear-gradient(135deg,rgba(102,126,234,0.22),rgba(118,75,162,0.15));
+      color:#c4b5fd;border:1px solid rgba(139,92,246,0.3);
+      box-shadow:0 0 0 0 transparent;
+    }
+    .sb-footer{margin-top:auto;padding-top:14px;border-top:1px solid var(--border)}
+    .user-chip{
+      display:flex;align-items:center;gap:11px;padding:12px;
+      background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:14px;
+    }
+    .user-chip-av{
+      width:38px;height:38px;border-radius:11px;
+      background:var(--grad);display:grid;place-items:center;font-size:16px;flex-shrink:0;
+    }
+    .user-chip-txt b{font-size:13px;font-weight:700;display:block}
+    .user-chip-txt span{font-size:11px;color:var(--sub)}
+
+    /* ══ MAIN ══ */
+    .main{padding:30px;display:flex;flex-direction:column;gap:22px;min-width:0}
+    .pg-head{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:4px}
+    .pg-head h2{font-size:26px;font-weight:800;letter-spacing:-0.6px}
+    .pg-head p{font-size:13px;color:var(--sub);margin-top:3px}
+
+    /* CARDS */
+    .card{background:var(--card);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:18px;padding:22px}
+    .card-lbl{font-size:11px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px}
+
+    /* METRICS */
+    .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+    .metric{
+      border-radius:18px;padding:22px;position:relative;overflow:hidden;
+      background:var(--card);border:1px solid var(--border);
+      transition:.2s;
+    }
+    .metric:hover{transform:translateY(-3px);border-color:rgba(255,255,255,0.15)}
+    .metric::after{
+      content:'';position:absolute;top:0;left:0;right:0;height:3px;
+      background:var(--mc,var(--grad));border-radius:18px 18px 0 0;
+    }
+    .metric .m-icon{font-size:26px;margin-bottom:10px}
+    .metric .m-val{font-size:32px;font-weight:900;letter-spacing:-1.5px}
+    .metric .m-lbl{font-size:12px;color:var(--sub);margin-top:3px;font-weight:500}
+    .metric.c1{--mc:var(--grad)}
+    .metric.c2{--mc:var(--grad4)}
+    .metric.c3{--mc:var(--grad2)}
+    .metric.c4{--mc:var(--grad3)}
+
+    /* GRID LAYOUTS */
+    .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+
+    /* DETAIL LIST */
+    .d-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)}
+    .d-row:last-child{border-bottom:none}
+    .d-ic{font-size:17px;width:28px;text-align:center}
+    .d-info label{font-size:10px;color:var(--sub);text-transform:uppercase;letter-spacing:.06em}
+    .d-info span{font-size:13.5px;font-weight:600;display:block}
+
+    /* ACHIEVEMENT */
+    .ach{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+    .ach:last-child{border-bottom:none}
+    .ach-dot{width:9px;height:9px;border-radius:50%;background:var(--grad);margin-top:5px;flex-shrink:0;box-shadow:0 0 10px rgba(102,126,234,0.7)}
+    .ach-txt{font-size:14px;font-weight:500;line-height:1.5}
+
+    /* TEAM CARDS */
+    .team-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+    .tc{
+      background:rgba(255,255,255,0.04);border:1px solid var(--border);
+      border-radius:16px;padding:18px;transition:.2s;
+    }
+    .tc:hover{border-color:var(--border2);transform:translateY(-2px);background:rgba(255,255,255,0.07)}
+    .tc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+    .tc-av{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:18px;flex-shrink:0}
+    .tc-av.v1{background:var(--grad)}
+    .tc-av.v2{background:var(--grad2)}
+    .tc-av.v3{background:var(--grad3)}
+    .tc-av.v4{background:var(--grad4)}
+    .tc-name{font-size:15px;font-weight:700}
+    .tc-role{font-size:11px;color:var(--sub);margin-top:1px}
+    .badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700}
+    .bv1{background:rgba(102,126,234,0.18);color:#a5b4fc;border:1px solid rgba(102,126,234,0.3)}
+    .bv2{background:rgba(67,233,123,0.15);color:#6ee7b7;border:1px solid rgba(67,233,123,0.3)}
+    .bv3{background:rgba(245,87,108,0.15);color:#fca5a5;border:1px solid rgba(245,87,108,0.3)}
+    .bv4{background:rgba(79,172,254,0.15);color:#bae6fd;border:1px solid rgba(79,172,254,0.3)}
+    .bv5{background:rgba(240,147,251,0.15);color:#f0c4fd;border:1px solid rgba(240,147,251,0.3)}
+    .prog{height:5px;background:rgba(255,255,255,0.07);border-radius:3px;margin-top:5px;overflow:hidden}
+    .prog-fill{height:100%;border-radius:3px;background:var(--pg,var(--grad))}
+    .s-row{display:flex;justify-content:space-between;font-size:12px;color:var(--sub);margin-top:8px}
+    .s-row strong{color:var(--text);font-weight:600}
+
+    /* TABLE */
+    .tbl-wrap{border-radius:14px;overflow:hidden;border:1px solid var(--border)}
+    table{width:100%;border-collapse:collapse}
+    thead{background:rgba(102,126,234,0.08);border-bottom:1px solid var(--border)}
+    th{padding:12px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.09em}
+    td{padding:13px 14px;font-size:13.5px;border-top:1px solid var(--border);font-weight:400}
+    tr:hover td{background:rgba(255,255,255,0.025)}
+    td strong{font-weight:700}
+
+    /* STATUS */
+    .s-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700}
+    .sp-ok{background:rgba(67,233,123,0.12);color:#43e97b;border:1px solid rgba(67,233,123,0.2)}
+    .sp-pend{background:rgba(251,191,36,0.12);color:#fbbf24;border:1px solid rgba(251,191,36,0.2)}
+    .sp-bad{background:rgba(245,87,108,0.12);color:#f5576c;border:1px solid rgba(245,87,108,0.2)}
+
+    /* FORMS */
+    .form-row{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;align-items:end}
+    .fl{font-size:11px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;display:block}
+
+    /* NOTE BOX */
+    .note-box{background:rgba(102,126,234,0.08);border:1px solid rgba(102,126,234,0.25);border-radius:12px;padding:16px;font-size:13.5px;color:var(--muted);line-height:1.7}
+    .note-box code{background:rgba(255,255,255,0.08);padding:2px 7px;border-radius:5px;font-size:12px;color:#c4b5fd}
+    .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+
+    /* ACTIONS */
+    .act-grp{display:flex;gap:6px;flex-wrap:wrap}
+
+    /* PERF ITEM */
+    .pi{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--border);font-size:14px}
+    .pi:last-child{border-bottom:none}
+    .pi label{color:var(--sub);font-size:12px;font-weight:600}
+    .pi .pv{font-weight:700}
+
+    /* VIEW CONTROL */
+    .view-section{display:none}
+    .view-section.active{display:block}
+
+    /* RESPONSIVE */
+    @media(max-width:1100px){.metrics{grid-template-columns:repeat(2,1fr)}.team-grid{grid-template-columns:1fr}}
+    @media(max-width:820px){
+      .shell{grid-template-columns:1fr}
+      .sidebar{position:relative;height:auto}
+      .sb-footer{display:none}
+      .g2{grid-template-columns:1fr}
+      .form-row{grid-template-columns:1fr}
+      .main{padding:18px}
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ──────────── AUTH ──────────── -->
+  <section id="auth">
+    <div class="auth-box">
+      <div class="auth-logo">
+        <div class="icon">🏢</div>
+        <div>
+          <h1>Company Portal</h1>
+          <p>Sign in to access your workspace</p>
+        </div>
+      </div>
+      <div class="role-tabs">
+        <button id="tabManager" class="active" onclick="setRole('manager')">👔 Manager</button>
+        <button id="tabEmployee" onclick="setRole('employee')">👩‍💻 Employee</button>
+      </div>
+      <form class="form-grid" onsubmit="login(event)" autocomplete="on">
+        <div class="f-row">
+          <div class="f-group">
+            <label>Work Email</label>
+            <input id="email" type="email" placeholder="name@company.com" required/>
+          </div>
+          <div class="f-group">
+            <label>Password</label>
+            <input id="password" type="password" placeholder="••••••••" required/>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-grad btn-full">Sign In →</button>
+        <p class="login-hint">Demo accounts pre-filled. Use a matching email + firstname123 to log in.</p>
+      </form>
+    </div>
+  </section>
+
+  <!-- ──────────── APP ──────────── -->
+  <section id="app">
+    <div class="shell">
+      <!-- SIDEBAR -->
+      <aside class="sidebar">
+        <div class="sb-brand">
+          <div class="sb-icon">📊</div>
+          <div class="sb-brand-txt">
+            <b id="roleTitle">Manager</b>
+            <span>Company Portal</span>
+          </div>
+        </div>
+        <div class="sb-sep"></div>
+        <div class="sb-label">Navigation</div>
+
+        <div class="nav-menu" id="menuManager">
+          <button data-view="m-dashboard" class="active"><span class="ico">🏠</span>Dashboard</button>
+          <button data-view="m-employees"><span class="ico">👥</span>Employees</button>
+          <button data-view="m-meeting"><span class="ico">🎥</span>Start Meeting</button>
+          <button data-view="m-assignments"><span class="ico">📝</span>Assignments</button>
+        </div>
+        <div class="nav-menu" id="menuEmployee" style="display:none">
+          <button data-view="e-dashboard" class="active"><span class="ico">🏠</span>Dashboard</button>
+          <button data-view="e-meeting"><span class="ico">🎥</span>Join Meeting</button>
+          <button data-view="e-tasks"><span class="ico">✅</span>My Tasks</button>
+        </div>
+
+        <div class="sb-footer">
+          <div class="user-chip">
+            <div class="user-chip-av">👤</div>
+            <div class="user-chip-txt">
+              <b id="whoami">Not signed in</b>
+              <span id="whoamiRole">—</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- MAIN -->
+      <main class="main">
+
+        <!-- ═══ MANAGER DASHBOARD ═══ -->
+        <section id="m-dashboard" class="view-section active">
+          <div class="pg-head">
+            <div><h2>Manager Dashboard</h2><p>Welcome back! Here's your team at a glance.</p></div>
+          </div>
+          <div class="metrics">
+            <div class="metric c1"><div class="m-icon">👥</div><div class="m-val" id="metricEmp">8</div><div class="m-lbl">Total Employees</div></div>
+            <div class="metric c2"><div class="m-icon">✅</div><div class="m-val" id="metricDone">0</div><div class="m-lbl">Tasks Completed</div></div>
+            <div class="metric c3"><div class="m-icon">⏳</div><div class="m-val" id="metricPend">0</div><div class="m-lbl">Tasks Pending</div></div>
+            <div class="metric c4"><div class="m-icon">⭐</div><div class="m-val" id="metricQual">4.6</div><div class="m-lbl">Avg Team Quality</div></div>
+          </div>
+          <div class="g2">
+            <div class="card">
+              <div class="card-lbl">Manager Profile</div>
+              <div id="managerDetails"></div>
+            </div>
+            <div class="card">
+              <div class="card-lbl">Achievements</div>
+              <div id="managerAchievements"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-lbl" style="margin-bottom:18px">Team Snapshot</div>
+            <div class="team-grid" id="teamSnapshot"></div>
+          </div>
+        </section>
+
+        <!-- ═══ EMPLOYEES ═══ -->
+        <section id="m-employees" class="view-section">
+          <div class="pg-head">
+            <div><h2>Employee Directory</h2><p>All team members at a glance.</p></div>
+            <span class="badge bv1" id="empCount">0 Employees</span>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>Name</th><th>Age</th><th>Role</th><th>Joined</th><th>Email</th><th>Phone</th><th>Location</th></tr></thead>
+              <tbody id="empTable"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ═══ MEETING ═══ -->
+        <section id="m-meeting" class="view-section">
+          <div class="pg-head"><div><h2>Start Meeting</h2><p>Launch your Jitsi room or the AI transcript summarizer.</p></div></div>
+          <div class="card">
+            <div class="note-box">Open <strong>Meeting</strong> to start your Jitsi room in a new tab. After it ends, use the <strong>Transcript Summarizer</strong> to extract tasks automatically via local AI. Your files <code>meeting.html</code> &amp; <code>summarizer.html</code> are used as-is.</div>
+            <div class="btn-row">
+              <button class="btn btn-grad" onclick="window.open('meeting.html','_blank')">🎥 Open Meeting</button>
+              <button class="btn btn-ghost" onclick="window.open('summarizer.html','_blank')">📝 Transcript Summarizer</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ═══ ASSIGNMENTS ═══ -->
+        <section id="m-assignments" class="view-section">
+          <div class="pg-head"><div><h2>Post-Meeting Tasks</h2><p>Assign and track employee tasks.</p></div></div>
+          <div class="card">
+            <div class="card-lbl">Add New Task</div>
+            <form class="form-row" onsubmit="addTask(event)">
+              <div><span class="fl">Employee</span><select id="taskEmp"></select></div>
+              <div><span class="fl">Task Title</span><input id="taskTitle" placeholder="e.g., Prepare Q4 Report" required></div>
+              <div><span class="fl">Deadline</span><input id="taskDeadline" type="date" required></div>
+              <div><span class="fl">&nbsp;</span><button class="btn btn-grad" type="submit">➕ Add</button></div>
+            </form>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>Employee</th><th>Task</th><th>Deadline</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody id="taskTable"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ═══ EMPLOYEE DASHBOARD ═══ -->
+        <section id="e-dashboard" class="view-section">
+          <div class="pg-head"><div><h2>My Dashboard</h2><p>Your performance and assignments.</p></div></div>
+          <div class="g2">
+            <div class="card"><div class="card-lbl">Performance</div><ul id="perfOverview" style="list-style:none"></ul></div>
+            <div class="card"><div class="card-lbl">Assignments</div><ul id="myAssignments" style="list-style:none"></ul></div>
+          </div>
+        </section>
+
+        <!-- ═══ EMPLOYEE MEETING ═══ -->
+        <section id="e-meeting" class="view-section">
+          <div class="pg-head"><div><h2>Join Meeting</h2><p>Open your Jitsi meeting room.</p></div></div>
+          <div class="card">
+            <div class="note-box">Opens your <code>meeting.html</code> in a new tab — we never modify it.</div>
+            <div class="btn-row">
+              <button class="btn btn-grad" onclick="window.open('meeting.html','_blank')">🎥 Open Meeting</button>
+              <button class="btn btn-ghost" onclick="window.open('summarizer.html','_blank')">📝 Transcript Summarizer</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ═══ MY TASKS ═══ -->
+        <section id="e-tasks" class="view-section">
+          <div class="pg-head"><div><h2>My Tasks</h2><p>Fill steps, export, and mark complete.</p></div></div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>Task</th><th>Deadline</th><th>Steps / Instructions</th><th>Export</th><th>Done</th></tr></thead>
+              <tbody id="myTaskTable"></tbody>
+            </table>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </section>
+</div>
+
+<!-- Libraries -->
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+<script>
+  /* ════════ DATA ════════ */
+  const demoManager = {
+    name:'Tejas KN', email:'tejas.manager@company.com', phone:'+91 90000 11111',
+    department:'Engineering & Product', location:'Bengaluru, IN'
+  };
+  const demoAchievements = [
+    'Led "Project Aurora" to launch — on-time & under budget 🚀',
+    'Grew team velocity by 22% in Q3 through agile restructuring',
+    'Mentored 8 engineers across product verticals',
+    'Deployed CI/CD pipeline cutting release cycles by 40%'
+  ];
+  const demoEmployees = [
+    { id:'E001', name:'Ritika Sharma',   age:24, role:'QA Engineer',             doj:'2024-02-12', email:'ritika@company.com',   phone:'+91 99876 54321', location:'Mysuru',    perf:{onTimeRate:88, quality:4.4, meetings:27}},
+    { id:'E002', name:'Arjun Mehta',     age:25, role:'UI/UX Designer',           doj:'2023-11-20', email:'arjun@company.com',    phone:'+91 91234 56780', location:'Hubballi',  perf:{onTimeRate:90, quality:4.5, meetings:30}},
+    { id:'E003', name:'Neha Patil',      age:23, role:'Data Analyst',             doj:'2024-04-05', email:'neha@company.com',     phone:'+91 90123 45678', location:'Mangaluru', perf:{onTimeRate:86, quality:4.3, meetings:25}},
+    { id:'E004', name:'Kiran Raj',       age:26, role:'Backend Developer',        doj:'2023-06-15', email:'kiran@company.com',    phone:'+91 97654 32109', location:'Bengaluru', perf:{onTimeRate:93, quality:4.7, meetings:38}},
+    { id:'E005', name:'Priya Nair',      age:27, role:'DevOps Engineer',          doj:'2022-09-01', email:'priya@company.com',    phone:'+91 96543 21098', location:'Chennai',   perf:{onTimeRate:95, quality:4.8, meetings:42}},
+    { id:'E006', name:'Rohan Desai',     age:24, role:'Frontend Developer',       doj:'2024-01-10', email:'rohan@company.com',    phone:'+91 95432 10987', location:'Pune',      perf:{onTimeRate:85, quality:4.2, meetings:22}},
+    { id:'E007', name:'Aisha Khan',      age:25, role:'Machine Learning Eng.',    doj:'2023-08-22', email:'aisha@company.com',    phone:'+91 94321 09876', location:'Hyderabad', perf:{onTimeRate:91, quality:4.6, meetings:35}},
+    { id:'E008', name:'Siddharth Verma', age:28, role:'Product Manager',          doj:'2022-03-17', email:'siddharth@company.com',phone:'+91 93210 98765', location:'Mumbai',    perf:{onTimeRate:89, quality:4.5, meetings:40}}
+  ];
+  const seedTasks = [
+    { id:'T001', empId:'E001', title:'Write regression test suite', deadline:'2025-11-15', steps:['Identify critical paths','Add Playwright tests'], status:'pending' },
+    { id:'T002', empId:'E004', title:'Build REST API for dashboard', deadline:'2025-11-20', steps:['Design endpoints','Code & test'], status:'pending' }
+  ];
+
+  /* ════════ STATE ════════ */
+  function loadState(){
+    const employees = JSON.parse(localStorage.getItem('employees')||'null') || demoEmployees;
+    const tasks     = JSON.parse(localStorage.getItem('tasks')||'null')     || seedTasks;
+    localStorage.setItem('employees', JSON.stringify(employees));
+    localStorage.setItem('tasks',     JSON.stringify(tasks));
+    return {employees, tasks};
+  }
+  function saveTasks(t){ localStorage.setItem('tasks', JSON.stringify(t)); }
+  let STATE = { role:'manager', user:null, ...loadState() };
+
+  /* ════════ AUTH ════════ */
+  function setRole(r){
+    STATE.role = r;
+    document.getElementById('tabManager').classList.toggle('active', r==='manager');
+    document.getElementById('tabEmployee').classList.toggle('active', r==='employee');
+  }
+  function findUserByEmail(email){
+    if(STATE.role==='manager') return (email===demoManager.email)?{...demoManager,role:'manager',password:'manager123'}:null;
+    return STATE.employees.find(e=>e.email===email);
+  }
+  function login(ev){
+    ev.preventDefault();
+    const email = document.getElementById('email').value.trim();
+    const pass  = document.getElementById('password').value.trim();
+    const user  = findUserByEmail(email);
+    if(!user){ alert('User not found. Use a demo email.'); return; }
+    const expected = STATE.role==='manager' ? 'manager123' : user.name.split(' ')[0].toLowerCase()+'123';
+    if(pass!==expected){ alert('Wrong password. Hint: manager123 or firstname123'); return; }
+    STATE.user = {...user, role:STATE.role};
+    document.getElementById('whoami').textContent = user.name;
+    document.getElementById('whoamiRole').textContent = STATE.role.toUpperCase();
+    document.getElementById('roleTitle').textContent = STATE.role==='manager' ? 'Manager' : 'Employee';
+    document.getElementById('auth').style.display = 'none';
+    document.getElementById('app').style.display  = 'block';
+    document.getElementById('menuManager').style.display  = STATE.role==='manager'  ? 'flex' : 'none';
+    document.getElementById('menuEmployee').style.display = STATE.role==='employee' ? 'flex' : 'none';
+    initViews();
+  }
+
+  /* ════════ ROUTING ════════ */
+  document.addEventListener('click', e=>{
+    const btn = e.target.closest('.sidebar .nav-menu button');
+    if(!btn) return;
+    const vid = btn.getAttribute('data-view'); if(!vid) return;
+    document.querySelectorAll('.sidebar .nav-menu button').forEach(b=>b.classList.toggle('active',b===btn));
+    document.querySelectorAll('main .view-section').forEach(s=>{ s.classList.remove('active'); s.style.display='none'; });
+    const t = document.getElementById(vid);
+    if(t){ t.classList.add('active'); t.style.display='block'; }
+    if(vid==='m-assignments') renderTaskTable();
+    if(vid==='e-tasks')       renderMyTasks();
+  });
+
+  /* ════════ MANAGER: DASHBOARD ════════ */
+  const AVCS = ['v1','v2','v3','v4'];
+  const AVICO = ['🧑‍💻','👩‍💻','🧑‍🎨','👩‍🔬','🧑‍🔧','👩‍🏭','🧑‍🔬','👨‍💼'];
+  const BADGES = ['bv1','bv2','bv3','bv4','bv5'];
+
+  function initManagerDashboard(){
+    const tasks = JSON.parse(localStorage.getItem('tasks'))||[];
+    document.getElementById('metricEmp').textContent  = STATE.employees.length;
+    document.getElementById('metricDone').textContent = tasks.filter(t=>t.status==='done').length;
+    document.getElementById('metricPend').textContent = tasks.filter(t=>t.status==='pending').length;
+    const avgQ = (STATE.employees.reduce((a,e)=>a+(e.perf?.quality||4.5),0)/STATE.employees.length).toFixed(1);
+    document.getElementById('metricQual').textContent = avgQ;
+
+    // Profile
+    const dets=[
+      {ic:'👤',l:'Name',v:demoManager.name},
+      {ic:'📧',l:'Email',v:demoManager.email},
+      {ic:'📞',l:'Phone',v:demoManager.phone},
+      {ic:'🏢',l:'Department',v:demoManager.department},
+      {ic:'📍',l:'Location',v:demoManager.location}
+    ];
+    document.getElementById('managerDetails').innerHTML = dets.map(x=>`
+      <div class="d-row">
+        <span class="d-ic">${x.ic}</span>
+        <div class="d-info"><label>${x.l}</label><span>${x.v}</span></div>
+      </div>`).join('');
+
+    // Achievements
+    document.getElementById('managerAchievements').innerHTML = demoAchievements.map(a=>`
+      <div class="ach"><div class="ach-dot"></div><div class="ach-txt">${a}</div></div>`).join('');
+
+    // Team snapshot — first 4 employees shown
+    document.getElementById('teamSnapshot').innerHTML = STATE.employees.slice(0,4).map((emp,i)=>`
+      <div class="tc">
+        <div class="tc-top">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="tc-av ${AVCS[i%4]}">${AVICO[i%AVICO.length]}</div>
+            <div>
+              <div class="tc-name">${emp.name}</div>
+              <div class="tc-role">${emp.role} · ${emp.location}</div>
+            </div>
+          </div>
+          <span class="badge ${BADGES[i%5]}">${emp.doj}</span>
+        </div>
+        <div>
+          <div class="s-row"><span>On-time Rate</span><strong>${emp.perf.onTimeRate}%</strong></div>
+          <div class="prog"><div class="prog-fill" style="width:${emp.perf.onTimeRate}%"></div></div>
+          <div class="s-row" style="margin-top:8px"><span>Quality Score</span><strong>★ ${emp.perf.quality}</strong></div>
+          <div class="prog"><div class="prog-fill" style="--pg:linear-gradient(90deg,#f093fb,#f5576c);width:${(emp.perf.quality/5)*100}%"></div></div>
+          <div class="s-row" style="margin-top:8px"><span>Meetings</span><strong>${emp.perf.meetings}</strong></div>
+        </div>
+      </div>`).join('');
+  }
+
+  /* ════════ EMPLOYEES TABLE ════════ */
+  function renderEmployees(){
+    document.getElementById('empCount').textContent = `${STATE.employees.length} Employees`;
+    document.getElementById('empTable').innerHTML = STATE.employees.map((e,i)=>`
+      <tr>
+        <td><strong>${e.name}</strong></td>
+        <td>${e.age}</td>
+        <td><span class="badge ${BADGES[i%5]}">${e.role}</span></td>
+        <td>${e.doj}</td>
+        <td>${e.email}</td>
+        <td>${e.phone}</td>
+        <td>${e.location}</td>
+      </tr>`).join('');
+    document.getElementById('taskEmp').innerHTML = STATE.employees.map(e=>`<option value="${e.id}">${e.name} — ${e.role}</option>`).join('');
+  }
+
+  /* ════════ TASKS ════════ */
+  function addTask(ev){
+    ev.preventDefault();
+    const empId=document.getElementById('taskEmp').value, title=document.getElementById('taskTitle').value.trim(), deadline=document.getElementById('taskDeadline').value;
+    if(!title||!deadline) return;
+    const id='T'+Math.random().toString(36).slice(2,7).toUpperCase();
+    const tasks=JSON.parse(localStorage.getItem('tasks'))||[];
+    tasks.push({id,empId,title,deadline,steps:[],status:'pending'});
+    saveTasks(tasks); STATE.tasks=tasks;
+    document.getElementById('taskTitle').value='';
+    renderTaskTable();
+    alert('Task added! Employee will see it under My Tasks.');
+  }
+  function renderTaskTable(){
+    const tasks=JSON.parse(localStorage.getItem('tasks'))||[];
+    document.getElementById('taskTable').innerHTML=tasks.map(t=>{
+      const emp=STATE.employees.find(e=>e.id===t.empId)||{name:'—'};
+      const cls=t.status==='done'?'sp-ok':t.status==='wrong'?'sp-bad':'sp-pend';
+      const ic=t.status==='done'?'✅':t.status==='wrong'?'❌':'⏳';
+      return `<tr>
+        <td><strong>${emp.name}</strong></td>
+        <td>${t.title}</td><td>${t.deadline}</td>
+        <td><span class="s-pill ${cls}">${ic} ${t.status}</span></td>
+        <td><div class="act-grp">
+          <button class="btn btn-ok btn-sm" onclick="setTaskStatus('${t.id}','done')">✔ Right</button>
+          <button class="btn btn-red btn-sm" onclick="setTaskStatus('${t.id}','wrong')">✖ Wrong</button>
+          <button class="btn btn-ghost btn-sm" onclick="deleteTask('${t.id}')">🗑</button>
+        </div></td></tr>`;
+    }).join('');
+  }
+  function setTaskStatus(id,status){
+    const tasks=JSON.parse(localStorage.getItem('tasks'))||[];
+    const t=tasks.find(x=>x.id===id); if(!t) return;
+    t.status=status; saveTasks(tasks); STATE.tasks=tasks; renderTaskTable();
+  }
+  function deleteTask(id){
+    let tasks=JSON.parse(localStorage.getItem('tasks'))||[];
+    tasks=tasks.filter(t=>t.id!==id); saveTasks(tasks); STATE.tasks=tasks; renderTaskTable();
+  }
+
+  /* ════════ EMPLOYEE VIEWS ════════ */
+  function initEmployeeDashboard(){
+    const me=STATE.user, dir=STATE.employees.find(e=>e.email===me.email)||me;
+    document.getElementById('perfOverview').innerHTML=`
+      <li class="pi"><label>Name</label><span class="pv">${dir.name}</span></li>
+      <li class="pi"><label>Role</label><span class="pv">${dir.role||'—'}</span></li>
+      <li class="pi"><label>On-time Rate</label><span class="pv">${dir.perf?.onTimeRate??90}%</span></li>
+      <li class="pi"><label>Quality Score</label><span class="pv">★ ${dir.perf?.quality??4.5}</span></li>
+      <li class="pi"><label>Meetings Attended</label><span class="pv">${dir.perf?.meetings??20}</span></li>`;
+    const my=document.getElementById('myAssignments');
+    const tasks=(JSON.parse(localStorage.getItem('tasks'))||[]).filter(t=>t.empId===dir.id);
+    if(!tasks.length){ my.innerHTML='<li class="pi" style="color:var(--sub)">No assignments yet.</li>'; return; }
+    my.innerHTML=tasks.map(t=>`
+      <li class="pi"><span>${t.title}</span>
+      <span class="s-pill ${t.status==='done'?'sp-ok':'sp-pend'}">${t.status==='done'?'✅ done':'⏳ pending'}</span></li>`).join('');
+  }
+  function renderMyTasks(){
+    const me=STATE.user, dir=STATE.employees.find(e=>e.email===me.email)||me;
+    const tasks=(JSON.parse(localStorage.getItem('tasks'))||[]).filter(t=>t.empId===dir.id);
+    document.getElementById('myTaskTable').innerHTML=tasks.map(t=>`
+      <tr>
+        <td><strong>${t.title}</strong></td>
+        <td>${t.deadline}</td>
+        <td><textarea id="steps_${t.id}" rows="4" placeholder="Write steps...">${(t.steps||[]).join('\n')}</textarea></td>
+        <td><div class="act-grp">
+          <button class="btn btn-ghost btn-sm" onclick="exportPPT('${t.id}')">📑 PPT</button>
+          <button class="btn btn-ghost btn-sm" onclick="exportReport('${t.id}')">📄 PDF</button>
+        </div></td>
+        <td><button class="btn btn-grad btn-sm" onclick="markDone('${t.id}')">✅ Complete</button></td>
+      </tr>`).join('');
+  }
+  function markDone(id){
+    const tasks=JSON.parse(localStorage.getItem('tasks'))||[];
+    const t=tasks.find(x=>x.id===id); if(!t) return;
+    const ta=document.getElementById('steps_'+id);
+    t.steps=(ta.value||'').split(/\n+/).map(s=>s.trim()).filter(Boolean);
+    t.status='done'; saveTasks(tasks); STATE.tasks=tasks;
+    renderMyTasks(); initEmployeeDashboard();
+    alert('Marked complete! Manager view will show ✅ Right.');
+  }
+
+  /* ════════ EXPORTS ════════ */
+  async function exportReport(id){
+    const {jsPDF}=window.jspdf, tasks=JSON.parse(localStorage.getItem('tasks'))||[];
+    const t=tasks.find(x=>x.id===id); if(!t) return;
+    const emp=STATE.employees.find(e=>e.id===t.empId)||{name:'Employee'};
+    const doc=new jsPDF();
+    doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.text('Task Completion Report',20,20);
+    doc.setFontSize(11); doc.setFont('helvetica','normal');
+    const lines=[`Employee: ${emp.name}`,`Task: ${t.title}`,`Deadline: ${t.deadline}`,`Status: ${t.status.toUpperCase()}`,'','Steps:',
+      ...(t.steps&&t.steps.length?t.steps.map((s,i)=>`${i+1}. ${s}`):['(no steps noted)'])];
+    let y=32; lines.forEach(l=>{doc.text(l,20,y);y+=8;});
+    doc.save(`Report_${emp.name.replace(/\s+/g,'_')}_${t.id}.pdf`);
+  }
+  async function exportPPT(id){
+    const t=(JSON.parse(localStorage.getItem('tasks'))||[]).find(x=>x.id===id); if(!t) return;
+    const emp=STATE.employees.find(e=>e.id===t.empId)||{name:'Employee'};
+    const pptx=new PptxGenJS(); pptx.title=`Task — ${t.title}`;
+    const s1=pptx.addSlide();
+    s1.addText('Task Summary',{x:.5,y:.5,fontSize:28,bold:true});
+    s1.addText(`Employee: ${emp.name}`,{x:.5,y:1.4,fontSize:18});
+    s1.addText(`Task: ${t.title}`,{x:.5,y:1.9,fontSize:18});
+    s1.addText(`Deadline: ${t.deadline}`,{x:.5,y:2.4,fontSize:18});
+    const s2=pptx.addSlide();
+    s2.addText('Execution Steps',{x:.5,y:.5,fontSize:24,bold:true});
+    const steps=t.steps&&t.steps.length?t.steps:['(no steps noted)'];
+    s2.addText(steps.map((s,i)=>`${i+1}. ${s}`),{x:.7,y:1.2,fontSize:18,bullet:true,lineSpacingMultiple:1.2});
+    const s3=pptx.addSlide();
+    s3.addText('Status',{x:.5,y:.5,fontSize:24,bold:true});
+    s3.addText(t.status==='done'?'✅ Completed':'⏳ Pending',{x:.7,y:1.2,fontSize:36});
+    await pptx.writeFile({fileName:`Task_${t.id}_${emp.name.replace(/\s+/g,'_')}.pptx`});
+  }
+
+  /* ════════ INIT ════════ */
+  function initViews(){
+    document.querySelectorAll('main .view-section').forEach(s=>{s.classList.remove('active');s.style.display='none';});
+    if(STATE.role==='manager'){
+      const d=document.getElementById('m-dashboard'); d.style.display='block'; d.classList.add('active');
+      document.querySelectorAll('#menuManager button').forEach((b,i)=>b.classList.toggle('active',i===0));
+      initManagerDashboard(); renderEmployees(); renderTaskTable();
+    } else {
+      const d=document.getElementById('e-dashboard'); d.style.display='block'; d.classList.add('active');
+      document.querySelectorAll('#menuEmployee button').forEach((b,i)=>b.classList.toggle('active',i===0));
+      initEmployeeDashboard(); renderMyTasks();
+    }
+  }
+  const DATA_VERSION = 'v3';
+  window.addEventListener('load',()=>{
+    // Flush old localStorage data when version changes
+    if(localStorage.getItem('data_version') !== DATA_VERSION){
+      localStorage.removeItem('employees');
+      localStorage.removeItem('tasks');
+      localStorage.setItem('data_version', DATA_VERSION);
+    }
+    loadState();
+    document.getElementById('email').value='tejas.manager@company.com';
+    document.getElementById('password').value='manager123';
+  });
+</script>
+</body>
+</html>
